@@ -14,9 +14,10 @@ export class RegisterUseCase {
 
   async execute(dto: RegisterRequestDTO): Promise<LoginResponseDTO> {
     const possibleUser = await this.userRepo.findByEmail(dto.email);
-    if (possibleUser) throw new EmailAlreadyInUse() // this must have be refactored
+    if (possibleUser) throw new EmailAlreadyInUse(); // this must have be refactored
 
     const newUser = User.create(dto.name, dto.email, await this.hashService.hash(dto.password));
+    await this.userRepo.save(newUser);
 
     return {
       accessToken: this.tokenService.generateAccessToken({ id: newUser.id }),

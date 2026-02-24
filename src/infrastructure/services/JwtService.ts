@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 
 export default class JwtService implements TokenService {
   generateAccessToken(payload: object) {
-    return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "15m" })
+    return jwt.sign(payload, process.env.JWT_ACCESS_SECRET!, { expiresIn: "15m" })
   }
 
   generateRefreshToken(payload: object) {
