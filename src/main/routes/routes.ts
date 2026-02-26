@@ -1,6 +1,7 @@
 import express from 'express';
 import z from 'zod';
-import { loginUseCase, registerUseCase } from '../factory/login.js';
+import { loginUseCase, registerUseCase, showProfileUseCase } from '../factory/login.js';
+import { error } from 'node:console';
 
 const registerSchema = z.object({
   name: z.string(),
@@ -32,15 +33,37 @@ router.post('/login', async (req, res, next) => {
 router.post('/register', async (req, res, next) => {
   try {
     const data = await registerSchema.parseAsync(req.body);
-    const registerResponse = await registerUseCase.execute(data);
+    const { accessToken, refreshToken } = await registerUseCase.execute(data);
 
-    res.cookie("token", registerResponse.accessToken, { httpOnly: true });
-    res.cookie("refreshToken", registerResponse.refreshToken, { httpOnly: true });
-    res.status(201).send("User created.");
+    res.status(201)
+      .cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/refresh'
+      })
+      .json({ accessToken, message: 'User created' });
+
   } catch (err) {
     next(err);
   }
 });
 
+router.get('/profile', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) throw new Error("Token não fornecido");
+
+    const [, accessToken] = authHeader.split(' ');
+    if (!accessToken) throw new Error("Token inválido");
+
+    const userProfile = await showProfileUseCase.execute(accessToken);
+    if (!userProfile) throw new Error('Token inválido');
+    res.status(200).json({ userProfile, message: "Usuário encontrado" });
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
+});
 
 export default router;
