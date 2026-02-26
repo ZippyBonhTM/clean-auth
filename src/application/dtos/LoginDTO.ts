@@ -13,3 +13,10 @@ export interface RegisterRequestDTO {
   password: string,
   name: string,
 }
+
+export interface UserDTO {
+  id: string;
+  name: string;
+  email: string;
+  role: "USER" | "ADMIN";
+}
