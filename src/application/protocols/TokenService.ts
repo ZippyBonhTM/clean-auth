@@ -1,5 +1,6 @@
 export default interface TokenService {
   generateAccessToken(payload: object): string;
   generateRefreshToken(payload: object): string;
-  verify(token: string): any;
+  verifyAccessToken(token: string): any;
+  verifyRefreshToken(token: string): any;
 }

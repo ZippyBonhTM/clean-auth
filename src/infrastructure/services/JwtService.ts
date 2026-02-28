@@ -10,8 +10,14 @@ export default class JwtService implements TokenService {
     return jwt.sign(payload, process.env.JWT_REFRESH_SECRET!, { expiresIn: "7d" });
   }
 
-  verify(token: string) {
+  verifyAccessToken(token: string) {
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET!);
+    if (typeof decoded !== 'object') return null;
+    return decoded;
+  }
+  
+  verifyRefreshToken(token: string) {
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_TOKEN!);
     if (typeof decoded !== 'object') return null;
     return decoded;
   }
