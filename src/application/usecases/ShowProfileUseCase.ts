@@ -10,7 +10,7 @@ export default class ShowProfileUseCase {
   ) { }
 
   async execute(userAccessToken: string): Promise<UserDTO | null> {
-    const accessPayload = this.tokenService.verify(userAccessToken);
+    const accessPayload = this.tokenService.verifyAccessToken(userAccessToken);
     if (!accessPayload) return null;
 
     const user = await this.userRepo.findById(accessPayload.id!);
