@@ -1,21 +1,27 @@
-import type JwtService from '@/infrastructure/services/JwtService.js';
-import type { UserDTO } from '../dtos/LoginDTO.js';
+import type { ShowProfileResponseDTO } from '../dtos/LoginDTO.js';
 import toUserDTO from '../mappers/UserMapper.js';
 import type UserRepository from '../protocols/UserRepository.js';
+import type ResolveAuthSessionUseCase from './ResolveAuthSessionUseCase.js';
 
 export default class ShowProfileUseCase {
   constructor(
     private userRepo: UserRepository,
-    private tokenService: JwtService
+    private resolveAuthSessionUseCase: ResolveAuthSessionUseCase
   ) { }
 
-  async execute(userAccessToken: string): Promise<UserDTO | null> {
-    const accessPayload = this.tokenService.verifyAccessToken(userAccessToken);
-    if (!accessPayload) return null;
+  async execute(accessToken: string, refreshToken: string): Promise<ShowProfileResponseDTO | null> {
+    const session = this.resolveAuthSessionUseCase.execute(accessToken, refreshToken);
 
-    const user = await this.userRepo.findById(accessPayload.id!);
+    const user = await this.userRepo.findById(session.userId);
 
     if (!user) return null;
-    return toUserDTO(user);
+
+    const response: ShowProfileResponseDTO = {
+      userProfile: toUserDTO(user),
+      accessToken: session.accessToken
+    };
+
+    if (session.refreshToken) response.refreshToken = session.refreshToken;
+    return response;
   }
 }
