@@ -3,7 +3,7 @@ import type { LoginResponseDTO, RegisterRequestDTO } from "../dtos/LoginDTO.js";
 import type HashService from '../protocols/HashService.js';
 import type TokenService from "../protocols/TokenService.js";
 import type UserRepository from "../protocols/UserRepository.js";
-import { EmailAlreadyInUse } from './errors/EmailAlreadyInUse.js';
+import { EmailAlreadyInUseError } from './errors/EmailAlreadyInUseError.js';
 
 export class RegisterUseCase {
   constructor(
@@ -14,7 +14,7 @@ export class RegisterUseCase {
 
   async execute(dto: RegisterRequestDTO): Promise<LoginResponseDTO> {
     const possibleUser = await this.userRepo.findByEmail(dto.email);
-    if (possibleUser) throw new EmailAlreadyInUse(); // this must have be refactored
+    if (possibleUser) throw new EmailAlreadyInUseError(); // this must have be refactored
 
     const newUser = User.create(dto.name, dto.email, await this.hashService.hash(dto.password));
     await this.userRepo.save(newUser);

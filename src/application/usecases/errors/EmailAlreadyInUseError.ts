@@ -1,6 +1,6 @@
 import { BaseDomainError } from '@/domain/errors/BaseDomainError.js';
 
-export class EmailAlreadyInUse extends BaseDomainError {
+export class EmailAlreadyInUseError extends BaseDomainError {
   readonly code: string = "EMAIL_ALREADY_IN_USE";
   readonly statusCode: number = 409;
 
