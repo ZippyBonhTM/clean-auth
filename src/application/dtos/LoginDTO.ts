@@ -20,3 +20,9 @@ export interface UserDTO {
   email: string;
   role: "USER" | "ADMIN";
 }
+
+export interface ShowProfileResponseDTO {
+  userProfile: UserDTO;
+  accessToken: string;
+  refreshToken?: string;
+}
