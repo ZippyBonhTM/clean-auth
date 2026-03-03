@@ -5,13 +5,16 @@ import JwtService from '@/infrastructure/services/JwtService.js';
 import { RegisterUseCase } from '@/application/usecases/RegisterUseCase.js';
 import ShowProfileUseCase from '@/application/usecases/ShowProfileUseCase.js';
 import ResolveAuthSessionUseCase from '@/application/usecases/ResolveAuthSessionUseCase.js';
+import ValidateAccessTokenUseCase from '@/application/usecases/ValidateAccessTokenUseCase.js';
 
 const localUserRepository = new LocalUserRepository();
 const bcryptHashService = new BcryptHashService();
 const jwtService = new JwtService();
 
 const resolveAuthSessionUseCase = new ResolveAuthSessionUseCase(jwtService);
+const validateAccessTokenUseCase = new ValidateAccessTokenUseCase(jwtService);
 
 export const loginUseCase = new LoginUseCase(localUserRepository, bcryptHashService, jwtService);
 export const registerUseCase = new RegisterUseCase(localUserRepository, bcryptHashService, jwtService);
 export const showProfileUseCase = new ShowProfileUseCase(localUserRepository, resolveAuthSessionUseCase);
+export { validateAccessTokenUseCase };
