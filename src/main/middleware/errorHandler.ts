@@ -10,6 +10,9 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
     return;
   }
   if (err instanceof BaseDomainError) {
+    if (req.path === '/refresh' && err.statusCode === 401) {
+      res.clearCookie("refreshToken");
+    }
     res.status(err.statusCode).json({ message: err.message, code: err.code });
     return;
   }

@@ -8,6 +8,7 @@ type UserDocument = {
   email: string;
   passwordHash: string;
   role: UserRole;
+  tokenVersion: number;
 };
 
 const userSchema = new mongoose.Schema<UserDocument>(
@@ -17,6 +18,7 @@ const userSchema = new mongoose.Schema<UserDocument>(
     email: { type: String, required: true, unique: true },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['USER', 'ADMIN'], required: true },
+    tokenVersion: { type: Number, required: true, default: 0 },
   },
   {
     collection: 'users',

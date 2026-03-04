@@ -90,6 +90,23 @@ router.get('/validate-token', async (req, res, next) => {
   }
 });
 
+router.post('/refresh', async (req, res, next) => {
+  try {
+    const refreshToken = getRefreshToken(req);
+    const refreshResponse = await refreshSessionUseCase.execute(refreshToken);
+
+    setRefreshTokenCookie(res, refreshResponse.refreshToken);
+
+    res.status(200).json({
+      accessToken: refreshResponse.accessToken,
+      message: 'Token refreshed'
+    });
+    return;
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/profile', async (req, res, next) => {
   try {
     const accessToken = getAccessToken(req);

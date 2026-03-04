@@ -10,6 +10,7 @@ function toDomain(document: UserDocument): User {
     document.email,
     document.passwordHash,
     document.role,
+    document.tokenVersion ?? 0,
   );
 }
 
@@ -44,6 +45,7 @@ export default class MongoUserRepository implements UserRepository {
           email: user.email,
           passwordHash: user.getPasswordHash(),
           role: user.role,
+          tokenVersion: user.getTokenVersion(),
         },
       },
       { upsert: true },
