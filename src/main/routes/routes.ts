@@ -2,7 +2,7 @@ import express from 'express';
 import z from 'zod';
 import {
   loginUseCase,
-  refreshSessionUseCase,
+  refreshAccessTokenUseCase,
   registerUseCase,
   showProfileUseCase,
   validateAccessTokenUseCase
@@ -51,6 +51,23 @@ router.post('/register', async (req, res, next) => {
     res.status(201)
       .json({ accessToken, message: 'User created' });
 
+    return;
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/refresh', async (req, res, next) => {
+  try {
+    const refreshToken = getRefreshToken(req);
+    const refreshResponse = refreshAccessTokenUseCase.execute(refreshToken);
+
+    setRefreshTokenCookie(res, refreshResponse.refreshToken);
+
+    res.status(200).json({
+      accessToken: refreshResponse.accessToken,
+      message: 'Token refreshed'
+    });
     return;
   } catch (err) {
     next(err);
