@@ -1,10 +1,8 @@
 import process from 'process';
+import 'dotenv/config';
 
 import app from '@/main/config/app.js';
 import { connectMongo, disconnectMongo } from '@/infrastructure/mongoose/connect.js';
-import { config } from 'dotenv';
-
-config();
 
 type UserDataSource = 'memory' | 'mongo';
 
@@ -41,10 +39,11 @@ function resolveDataSource(): UserDataSource {
 }
 
 function readPort(): number {
-  const port = Number.parseInt(process.env.APPLICATION_PORT ?? '', 10);
+  const rawPort = process.env.PORT ?? process.env.APPLICATION_PORT ?? '';
+  const port = Number.parseInt(rawPort, 10);
 
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error('.env have not been configured/PORT');
+    throw new Error('Invalid port. Set PORT (or APPLICATION_PORT) with a valid value.');
   }
 
   return port;
