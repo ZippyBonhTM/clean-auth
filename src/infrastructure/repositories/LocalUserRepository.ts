@@ -17,6 +17,13 @@ export default class LocalUserRepository implements UserRepository {
   }
 
   async save(user: User): Promise<void> {
-    this.userList.push(user);
+    const index = this.userList.findIndex((item) => item.id === user.id);
+
+    if (index === -1) {
+      this.userList.push(user);
+      return;
+    }
+
+    this.userList[index] = user;
   }
 }

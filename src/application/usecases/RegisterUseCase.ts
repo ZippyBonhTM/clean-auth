@@ -21,7 +21,10 @@ export class RegisterUseCase {
 
     return {
       accessToken: this.tokenService.generateAccessToken({ id: newUser.id }),
-      refreshToken: this.tokenService.generateRefreshToken({ id: newUser.id })
+      refreshToken: this.tokenService.generateRefreshToken({
+        id: newUser.id,
+        tokenVersion: newUser.getTokenVersion(),
+      })
     };
   }
 }

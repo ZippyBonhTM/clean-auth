@@ -2,6 +2,7 @@ import express from 'express';
 import z from 'zod';
 import {
   loginUseCase,
+  refreshSessionUseCase,
   registerUseCase,
   showProfileUseCase,
   validateAccessTokenUseCase
@@ -65,6 +66,23 @@ router.get('/validate-token', async (req, res, next) => {
       valid: true,
       userId: validationResponse.userId,
       message: 'Token is valid'
+    });
+    return;
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/refresh', async (req, res, next) => {
+  try {
+    const refreshToken = getRefreshToken(req);
+    const refreshResponse = await refreshSessionUseCase.execute(refreshToken);
+
+    setRefreshTokenCookie(res, refreshResponse.refreshToken);
+
+    res.status(200).json({
+      accessToken: refreshResponse.accessToken,
+      message: 'Token refreshed'
     });
     return;
   } catch (err) {

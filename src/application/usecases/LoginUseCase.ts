@@ -23,7 +23,10 @@ export class LoginUseCase {
 
     return {
       accessToken: this.tokenService.generateAccessToken({ id: user.id }),
-      refreshToken: this.tokenService.generateRefreshToken({ id: user.id })
+      refreshToken: this.tokenService.generateRefreshToken({
+        id: user.id,
+        tokenVersion: user.getTokenVersion(),
+      })
     };
   }
 }

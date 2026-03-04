@@ -1,5 +1,6 @@
 import AccessTokenExpiredError from '../protocols/errors/AccessTokenExpiredError.js';
 import type TokenService from '../protocols/TokenService.js';
+import type UserRepository from '../protocols/UserRepository.js';
 import { InvalidTokenError } from './errors/InvalidTokenError.js';
 
 export interface ResolvedAuthSession {
@@ -9,9 +10,12 @@ export interface ResolvedAuthSession {
 }
 
 export default class ResolveAuthSessionUseCase {
-  constructor(private tokenService: TokenService) {}
+  constructor(
+    private tokenService: TokenService,
+    private userRepo: UserRepository
+  ) {}
 
-  execute(accessToken: string, refreshToken: string): ResolvedAuthSession {
+  async execute(accessToken: string, refreshToken: string): Promise<ResolvedAuthSession> {
     try {
       const accessPayload = this.tokenService.verifyAccessToken(accessToken);
       if (!accessPayload || typeof accessPayload.id !== 'string') throw new InvalidTokenError();
@@ -25,9 +29,26 @@ export default class ResolveAuthSessionUseCase {
 
       const refreshPayload = this.tokenService.verifyRefreshToken(refreshToken);
       if (!refreshPayload || typeof refreshPayload.id !== 'string') throw new InvalidTokenError();
+      const tokenVersion = resolveRefreshTokenVersion(refreshPayload.tokenVersion);
+
+      if (tokenVersion === null) {
+        throw new InvalidTokenError();
+      }
+
+      const user = await this.userRepo.findById(refreshPayload.id);
+
+      if (user === null || user.getTokenVersion() !== tokenVersion) {
+        throw new InvalidTokenError();
+      }
+
+      const nextTokenVersion = user.rotateRefreshToken();
+      await this.userRepo.save(user);
 
       const newAccessToken = this.tokenService.generateAccessToken({ id: refreshPayload.id });
-      const newRefreshToken = this.tokenService.generateRefreshToken({ id: refreshPayload.id });
+      const newRefreshToken = this.tokenService.generateRefreshToken({
+        id: refreshPayload.id,
+        tokenVersion: nextTokenVersion,
+      });
 
       return {
         userId: refreshPayload.id,
@@ -36,4 +57,16 @@ export default class ResolveAuthSessionUseCase {
       };
     }
   }
+}
+
+function resolveRefreshTokenVersion(value: unknown): number | null {
+  if (value === undefined) {
+    return 0;
+  }
+
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+    return null;
+  }
+
+  return value;
 }

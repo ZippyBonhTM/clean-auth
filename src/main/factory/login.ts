@@ -1,6 +1,7 @@
 import type UserRepository from '@/application/protocols/UserRepository.js';
 import { LoginUseCase } from '@/application/usecases/LoginUseCase.js';
 import { RegisterUseCase } from '@/application/usecases/RegisterUseCase.js';
+import RefreshSessionUseCase from '@/application/usecases/RefreshSessionUseCase.js';
 import ResolveAuthSessionUseCase from '@/application/usecases/ResolveAuthSessionUseCase.js';
 import ShowProfileUseCase from '@/application/usecases/ShowProfileUseCase.js';
 import ValidateAccessTokenUseCase from '@/application/usecases/ValidateAccessTokenUseCase.js';
@@ -37,10 +38,11 @@ const userRepository = createUserRepository();
 const bcryptHashService = new BcryptHashService();
 const jwtService = new JwtService();
 
-const resolveAuthSessionUseCase = new ResolveAuthSessionUseCase(jwtService);
+const resolveAuthSessionUseCase = new ResolveAuthSessionUseCase(jwtService, userRepository);
+const refreshSessionUseCase = new RefreshSessionUseCase(jwtService, userRepository);
 const validateAccessTokenUseCase = new ValidateAccessTokenUseCase(jwtService);
 
 export const loginUseCase = new LoginUseCase(userRepository, bcryptHashService, jwtService);
 export const registerUseCase = new RegisterUseCase(userRepository, bcryptHashService, jwtService);
 export const showProfileUseCase = new ShowProfileUseCase(userRepository, resolveAuthSessionUseCase);
-export { validateAccessTokenUseCase };
+export { refreshSessionUseCase, validateAccessTokenUseCase };
