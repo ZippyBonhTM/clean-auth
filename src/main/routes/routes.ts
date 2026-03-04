@@ -1,6 +1,11 @@
 import express from 'express';
 import z from 'zod';
-import { loginUseCase, registerUseCase, showProfileUseCase } from '../factory/login.js';
+import {
+  loginUseCase,
+  registerUseCase,
+  showProfileUseCase,
+  validateAccessTokenUseCase
+} from '../factory/login.js';
 import getAccessToken from '../util/getAccessToken.js';
 import getRefreshToken from '../util/getRefreshToken.js';
 import setRefreshTokenCookie from '../util/setRefreshTokenCookie.js';
@@ -45,6 +50,22 @@ router.post('/register', async (req, res, next) => {
     res.status(201)
       .json({ accessToken, message: 'User created' });
 
+    return;
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/validate-token', async (req, res, next) => {
+  try {
+    const accessToken = getAccessToken(req);
+    const validationResponse = validateAccessTokenUseCase.execute(accessToken);
+
+    res.status(200).json({
+      valid: true,
+      userId: validationResponse.userId,
+      message: 'Token is valid'
+    });
     return;
   } catch (err) {
     next(err);
