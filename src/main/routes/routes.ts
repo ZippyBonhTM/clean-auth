@@ -24,6 +24,20 @@ const loginSchema = z.object({
 
 const router = express.Router();
 
+function readOptionalRefreshToken(req: express.Request): string {
+  const cookieHeader = req.headers.cookie;
+
+  if (cookieHeader === undefined || cookieHeader.trim().length === 0) {
+    return '';
+  }
+
+  return cookieHeader
+    .split(';')
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith('refreshToken='))
+    ?.replace('refreshToken=', '') ?? '';
+}
+
 router.post('/login', async (req, res, next) => {
   try {
     const data = await loginSchema.parseAsync(req.body);
@@ -110,7 +124,7 @@ router.post('/refresh', async (req, res, next) => {
 router.get('/profile', async (req, res, next) => {
   try {
     const accessToken = getAccessToken(req);
-    const refreshToken = getRefreshToken(req);
+    const refreshToken = readOptionalRefreshToken(req);
 
     const profileResponse = await showProfileUseCase.execute(accessToken, refreshToken);
 
