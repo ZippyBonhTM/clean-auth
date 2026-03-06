@@ -22,20 +22,17 @@ export default class RefreshSessionUseCase {
       throw new InvalidTokenError();
     }
 
-    const user = await this.userRepo.findById(refreshPayload.id);
+    const user = await this.userRepo.rotateRefreshToken(refreshPayload.id, tokenVersion);
 
-    if (user === null || user.getTokenVersion() !== tokenVersion) {
+    if (user === null) {
       throw new InvalidTokenError();
     }
-
-    const nextTokenVersion = user.rotateRefreshToken();
-    await this.userRepo.save(user);
 
     return {
       accessToken: this.tokenService.generateAccessToken({ id: user.id }),
       refreshToken: this.tokenService.generateRefreshToken({
         id: user.id,
-        tokenVersion: nextTokenVersion,
+        tokenVersion: user.getTokenVersion(),
       }),
     };
   }

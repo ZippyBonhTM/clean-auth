@@ -35,19 +35,16 @@ export default class ResolveAuthSessionUseCase {
         throw new InvalidTokenError();
       }
 
-      const user = await this.userRepo.findById(refreshPayload.id);
+      const user = await this.userRepo.rotateRefreshToken(refreshPayload.id, tokenVersion);
 
-      if (user === null || user.getTokenVersion() !== tokenVersion) {
+      if (user === null) {
         throw new InvalidTokenError();
       }
-
-      const nextTokenVersion = user.rotateRefreshToken();
-      await this.userRepo.save(user);
 
       const newAccessToken = this.tokenService.generateAccessToken({ id: refreshPayload.id });
       const newRefreshToken = this.tokenService.generateRefreshToken({
         id: refreshPayload.id,
-        tokenVersion: nextTokenVersion,
+        tokenVersion: user.getTokenVersion(),
       });
 
       return {
