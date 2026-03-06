@@ -1,26 +1,16 @@
 import express from 'express';
-import z from 'zod';
 import {
   loginUseCase,
-  refreshAccessTokenUseCase,
+  logoutSessionUseCase,
+  refreshSessionUseCase,
   registerUseCase,
   showProfileUseCase,
   validateAccessTokenUseCase
 } from '../factory/login.js';
 import getAccessToken from '../util/getAccessToken.js';
 import getRefreshToken from '../util/getRefreshToken.js';
-import setRefreshTokenCookie from '../util/setRefreshTokenCookie.js';
-
-const registerSchema = z.object({
-  name: z.string(),
-  email: z.email(),
-  password: z.string()
-});
-
-const loginSchema = z.object({
-  email: z.email(),
-  password: z.string()
-});
+import { loginSchema, registerSchema } from './authSchemas.js';
+import setRefreshTokenCookie, { clearRefreshTokenCookie } from '../util/setRefreshTokenCookie.js';
 
 const router = express.Router();
 
@@ -71,23 +61,6 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-router.post('/refresh', async (req, res, next) => {
-  try {
-    const refreshToken = getRefreshToken(req);
-    const refreshResponse = refreshAccessTokenUseCase.execute(refreshToken);
-
-    setRefreshTokenCookie(res, refreshResponse.refreshToken);
-
-    res.status(200).json({
-      accessToken: refreshResponse.accessToken,
-      message: 'Token refreshed'
-    });
-    return;
-  } catch (err) {
-    next(err);
-  }
-});
-
 router.get('/validate-token', async (req, res, next) => {
   try {
     const accessToken = getAccessToken(req);
@@ -115,6 +88,23 @@ router.post('/refresh', async (req, res, next) => {
       accessToken: refreshResponse.accessToken,
       message: 'Token refreshed'
     });
+    return;
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/logout', async (req, res, next) => {
+  try {
+    const refreshToken = readOptionalRefreshToken(req);
+
+    if (refreshToken.length > 0) {
+      await logoutSessionUseCase.execute(refreshToken);
+    }
+
+    clearRefreshTokenCookie(res);
+
+    res.status(200).json({ message: 'User logged out' });
     return;
   } catch (err) {
     next(err);
