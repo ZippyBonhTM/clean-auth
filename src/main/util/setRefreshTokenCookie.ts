@@ -1,4 +1,4 @@
-import type { Response } from 'express';
+import type { CookieOptions, Response } from 'express';
 
 type CookieSameSite = 'lax' | 'strict' | 'none';
 const DEFAULT_REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -65,13 +65,13 @@ function resolveRefreshCookieMaxAgeMs(): number {
   return Math.round(parsedSeconds * 1000);
 }
 
-export default function setRefreshTokenCookie(res: Response, refreshToken: string): void {
+function resolveRefreshTokenCookieOptions(): CookieOptions {
   const cookieSameSite = resolveCookieSameSite();
   const cookieSecure = resolveCookieSecure(cookieSameSite);
   const cookieDomain = resolveCookieDomain();
   const cookieMaxAgeMs = resolveRefreshCookieMaxAgeMs();
 
-  res.cookie('refreshToken', refreshToken, {
+  return {
     httpOnly: true,
     secure: cookieSecure,
     sameSite: cookieSameSite,
@@ -79,5 +79,25 @@ export default function setRefreshTokenCookie(res: Response, refreshToken: strin
     maxAge: cookieMaxAgeMs,
     expires: new Date(Date.now() + cookieMaxAgeMs),
     path: '/'
+  };
+}
+
+export function clearRefreshTokenCookie(res: Response): void {
+  const cookieOptions = resolveRefreshTokenCookieOptions();
+
+  res.clearCookie('refreshToken', {
+    httpOnly: cookieOptions.httpOnly,
+    secure: cookieOptions.secure,
+    sameSite: cookieOptions.sameSite,
+    ...(cookieOptions.domain !== undefined ? { domain: cookieOptions.domain } : {}),
+    path: cookieOptions.path,
+  });
+}
+
+export default function setRefreshTokenCookie(res: Response, refreshToken: string): void {
+  const cookieOptions = resolveRefreshTokenCookieOptions();
+
+  res.cookie('refreshToken', refreshToken, {
+    ...cookieOptions,
   });
 }
