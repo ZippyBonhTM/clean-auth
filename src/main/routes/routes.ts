@@ -3,14 +3,16 @@ import {
   loginUseCase,
   logoutSessionUseCase,
   refreshSessionUseCase,
+  revokeUserSessionsUseCase,
   registerUseCase,
   showProfileUseCase,
   validateAccessTokenUseCase
 } from '../factory/login.js';
 import getAccessToken from '../util/getAccessToken.js';
 import getRefreshToken from '../util/getRefreshToken.js';
-import { loginSchema, registerSchema } from './authSchemas.js';
+import { loginSchema, registerSchema, revokeUserSessionsSchema } from './authSchemas.js';
 import setRefreshTokenCookie, { clearRefreshTokenCookie } from '../util/setRefreshTokenCookie.js';
+import { isInternalServiceAuthorized, readConfiguredInternalServiceToken } from '../util/isInternalServiceAuthorized.js';
 
 const router = express.Router();
 
@@ -131,6 +133,48 @@ router.get('/profile', async (req, res, next) => {
       userProfile: profileResponse.userProfile,
       accessToken: profileResponse.accessToken,
       message: "Usuário encontrado"
+    });
+    return;
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/internal/users/:userId/sessions/revoke', async (req, res, next) => {
+  try {
+    const configuredToken = readConfiguredInternalServiceToken();
+
+    if (configuredToken === null) {
+      res.status(503).json({ message: 'Internal service authorization is not configured.' });
+      return;
+    }
+
+    const providedToken = getAccessToken(req);
+
+    if (!isInternalServiceAuthorized(providedToken)) {
+      res.status(401).json({ message: 'Invalid internal service authorization.' });
+      return;
+    }
+
+    const userId = req.params.userId?.trim() ?? '';
+
+    if (userId.length === 0) {
+      res.status(400).json({ message: 'userId route param is required.' });
+      return;
+    }
+
+    await revokeUserSessionsSchema.parseAsync(req.body);
+
+    const revokeResponse = await revokeUserSessionsUseCase.execute(userId);
+
+    if (revokeResponse.revokedSessionCount === 0) {
+      res.status(404).json({ message: 'User not found.' });
+      return;
+    }
+
+    res.status(200).json({
+      revokedSessionCount: revokeResponse.revokedSessionCount,
+      message: 'User sessions revoked.',
     });
     return;
   } catch (err) {

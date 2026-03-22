@@ -27,8 +27,10 @@ Required values:
 - `CORS_ORIGINS=https://<FRONTEND_DOMAIN>`
 - `COOKIE_SAME_SITE=none`
 - `COOKIE_SECURE=true`
+- `AUTH_INTERNAL_SERVICE_TOKEN=<SHARED_INTERNAL_SECRET>`
 
 Notes:
 
 - Railway injects `PORT` automatically.
-- `APPLICATION_PORT` is optional fallback.
+- `AUTH_INTERNAL_SERVICE_TOKEN` must match the same secret configured in `clean-periodic-table-backend`.
+- The internal route `/internal/users/:userId/sessions/revoke` is intended only for trusted backend services, never for direct browser use.

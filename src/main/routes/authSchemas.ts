@@ -17,4 +17,10 @@ const loginSchema = z.object({
   password: passwordSchema,
 });
 
-export { loginSchema, registerSchema };
+const revokeUserSessionsSchema = z.object({
+  actorUserId: z.string().trim().min(1, 'actorUserId is required.'),
+  reason: z.string().trim().min(1, 'Reason is required.'),
+  mode: z.enum(['all', 'except-current']).optional().default('all'),
+});
+
+export { loginSchema, registerSchema, revokeUserSessionsSchema };

@@ -56,6 +56,19 @@ export default class MongoUserRepository implements UserRepository {
     return toDomain(user);
   }
 
+  async revokeUserSessions(id: string): Promise<boolean> {
+    const result = await UserModel.updateOne(
+      { id },
+      {
+        $inc: {
+          tokenVersion: 1,
+        },
+      },
+    ).exec();
+
+    return result.matchedCount > 0;
+  }
+
   async save(user: User): Promise<void> {
     await UserModel.updateOne(
       { id: user.id },

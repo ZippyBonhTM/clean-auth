@@ -39,6 +39,25 @@ export default class LocalUserRepository implements UserRepository {
     return user;
   }
 
+  async revokeUserSessions(id: string): Promise<boolean> {
+    const userIndex = this.userList.findIndex((user) => user.id === id);
+
+    if (userIndex === -1) {
+      return false;
+    }
+
+    const user = this.userList[userIndex];
+
+    if (user === undefined) {
+      return false;
+    }
+
+    user.rotateRefreshToken();
+    this.userList[userIndex] = user;
+
+    return true;
+  }
+
   async save(user: User): Promise<void> {
     const index = this.userList.findIndex((item) => item.id === user.id);
 
