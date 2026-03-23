@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loginSchema, registerSchema } from '@/main/routes/authSchemas.js';
+import { loginSchema, registerSchema, revokeUserSessionsSchema } from '@/main/routes/authSchemas.js';
 
 describe('authSchemas', () => {
   it('rejects blank register fields', async () => {
@@ -34,5 +34,18 @@ describe('authSchemas', () => {
         password: '   ',
       }),
     ).rejects.toThrow();
+  });
+
+  it('normalizes internal session-revoke payloads', async () => {
+    await expect(
+      revokeUserSessionsSchema.parseAsync({
+        actorUserId: '  admin-1  ',
+        reason: '  Security rotation  ',
+      }),
+    ).resolves.toEqual({
+      actorUserId: 'admin-1',
+      reason: 'Security rotation',
+      mode: 'all',
+    });
   });
 });
