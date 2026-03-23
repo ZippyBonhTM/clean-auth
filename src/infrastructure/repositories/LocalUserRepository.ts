@@ -1,4 +1,5 @@
 import type UserRepository from "@/application/protocols/UserRepository.js";
+import type { ListUserIdentitiesInput } from "@/application/protocols/UserRepository.js";
 import User from "@/domain/User.js";
 
 export default class LocalUserRepository implements UserRepository {
@@ -16,6 +17,25 @@ export default class LocalUserRepository implements UserRepository {
     const user = this.userList.find((user) => { return user.id === id; });
     if (!user) return null;
     return user;
+  }
+
+  async listIdentities(input: ListUserIdentitiesInput) {
+    const cursor = input.cursor?.trim() ?? "";
+    const visibleUsers = this.userList
+      .slice()
+      .sort((first, second) => first.id.localeCompare(second.id))
+      .filter((user) => cursor.length === 0 || user.id.localeCompare(cursor) > 0);
+    const pageItems = visibleUsers.slice(0, input.limit);
+    const lastItem = pageItems[pageItems.length - 1];
+
+    return {
+      items: pageItems.map((user) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      })),
+      nextCursor: visibleUsers.length > input.limit && lastItem !== undefined ? lastItem.id : null,
+    };
   }
 
   async rotateRefreshToken(id: string, currentTokenVersion: number): Promise<User | null> {

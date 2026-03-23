@@ -33,4 +33,5 @@ Notes:
 
 - Railway injects `PORT` automatically.
 - `AUTH_INTERNAL_SERVICE_TOKEN` must match the same secret configured in `clean-periodic-table-backend`.
+- The internal route `/internal/users` is intended only for trusted backend services, never for direct browser use.
 - The internal route `/internal/users/:userId/sessions/revoke` is intended only for trusted backend services, never for direct browser use.

@@ -1,5 +1,6 @@
 import type UserRepository from '@/application/protocols/UserRepository.js';
 import { LoginUseCase } from '@/application/usecases/LoginUseCase.js';
+import ListInternalUsersUseCase from '@/application/usecases/ListInternalUsersUseCase.js';
 import LogoutSessionUseCase from '@/application/usecases/LogoutSessionUseCase.js';
 import { RegisterUseCase } from '@/application/usecases/RegisterUseCase.js';
 import RefreshSessionUseCase from '@/application/usecases/RefreshSessionUseCase.js';
@@ -45,12 +46,14 @@ const logoutSessionUseCase = new LogoutSessionUseCase(jwtService, userRepository
 const refreshSessionUseCase = new RefreshSessionUseCase(jwtService, userRepository);
 const validateAccessTokenUseCase = new ValidateAccessTokenUseCase(jwtService);
 const revokeUserSessionsUseCase = new RevokeUserSessionsUseCase(userRepository);
+const listInternalUsersUseCase = new ListInternalUsersUseCase(userRepository);
 
 export const loginUseCase = new LoginUseCase(userRepository, bcryptHashService, jwtService);
 export const registerUseCase = new RegisterUseCase(userRepository, bcryptHashService, jwtService);
 export const showProfileUseCase = new ShowProfileUseCase(userRepository, resolveAuthSessionUseCase);
 
 export {
+  listInternalUsersUseCase,
   logoutSessionUseCase,
   refreshSessionUseCase,
   revokeUserSessionsUseCase,
