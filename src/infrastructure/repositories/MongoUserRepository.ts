@@ -42,7 +42,7 @@ export default class MongoUserRepository implements UserRepository {
       cursor.length > 0
         ? { id: { $gt: cursor } }
         : {};
-    const documents = await UserModel.find(query, { _id: 0, __v: 0, id: 1, name: 1, email: 1 })
+    const documents = await UserModel.find(query, { _id: 0, id: 1, name: 1, email: 1 })
       .sort({ id: 1 })
       .limit(input.limit + 1)
       .lean<Array<Pick<UserDocument, 'id' | 'name' | 'email'>>>()
