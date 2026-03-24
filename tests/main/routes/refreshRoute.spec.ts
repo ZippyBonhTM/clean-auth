@@ -1,5 +1,6 @@
 import type { Server } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import jwt from 'jsonwebtoken';
 
 type MutableEnv = Record<string, string | undefined>;
 
@@ -128,5 +129,44 @@ describe('refresh route', () => {
     });
 
     expect(refreshResponse.status).toBe(401);
+  });
+
+  it('does not clear the refresh cookie for a generic invalid refresh token error', async () => {
+    const refreshResponse = await fetch(`${baseUrl}/refresh`, {
+      method: 'POST',
+      headers: {
+        cookie: 'refreshToken=not-a-valid-token',
+      },
+    });
+
+    expect(refreshResponse.status).toBe(401);
+    expect(refreshResponse.headers.get('set-cookie')).toBeNull();
+    await expect(refreshResponse.json()).resolves.toMatchObject({
+      code: 'INVALID_TOKEN_ERROR',
+    });
+  });
+
+  it('still clears the refresh cookie when the refresh token is truly expired', async () => {
+    const expiredRefreshToken = jwt.sign(
+      {
+        id: 'user-1',
+        tokenVersion: 0,
+      },
+      process.env.JWT_REFRESH_SECRET ?? 'test-refresh-secret',
+      { expiresIn: -1 },
+    );
+
+    const refreshResponse = await fetch(`${baseUrl}/refresh`, {
+      method: 'POST',
+      headers: {
+        cookie: `refreshToken=${expiredRefreshToken}`,
+      },
+    });
+
+    expect(refreshResponse.status).toBe(401);
+    expect(refreshResponse.headers.get('set-cookie')).toContain('refreshToken=');
+    await expect(refreshResponse.json()).resolves.toMatchObject({
+      code: 'REFRESH_TOKEN_EXPIRED',
+    });
   });
 });
