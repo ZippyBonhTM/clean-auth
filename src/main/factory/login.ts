@@ -41,7 +41,7 @@ const userRepository = createUserRepository();
 const bcryptHashService = new BcryptHashService();
 const jwtService = new JwtService();
 
-const resolveAuthSessionUseCase = new ResolveAuthSessionUseCase(jwtService, userRepository);
+const resolveAuthSessionUseCase = new ResolveAuthSessionUseCase(jwtService);
 const logoutSessionUseCase = new LogoutSessionUseCase(jwtService, userRepository);
 const refreshSessionUseCase = new RefreshSessionUseCase(jwtService, userRepository);
 const validateAccessTokenUseCase = new ValidateAccessTokenUseCase(jwtService);

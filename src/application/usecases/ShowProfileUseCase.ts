@@ -9,8 +9,8 @@ export default class ShowProfileUseCase {
     private resolveAuthSessionUseCase: ResolveAuthSessionUseCase
   ) { }
 
-  async execute(accessToken: string, refreshToken: string): Promise<ShowProfileResponseDTO | null> {
-    const session = await this.resolveAuthSessionUseCase.execute(accessToken, refreshToken);
+  async execute(accessToken: string): Promise<ShowProfileResponseDTO | null> {
+    const session = await this.resolveAuthSessionUseCase.execute(accessToken);
 
     const user = await this.userRepo.findById(session.userId);
 
@@ -20,8 +20,6 @@ export default class ShowProfileUseCase {
       userProfile: toUserDTO(user),
       accessToken: session.accessToken
     };
-
-    if (session.refreshToken) response.refreshToken = session.refreshToken;
     return response;
   }
 }
