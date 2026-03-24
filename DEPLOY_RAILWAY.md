@@ -28,10 +28,12 @@ Required values:
 - `COOKIE_SAME_SITE=none`
 - `COOKIE_SECURE=true`
 - `AUTH_INTERNAL_SERVICE_TOKEN=<SHARED_INTERNAL_SECRET>`
+- `REFRESH_ROTATION_GRACE_MS=3000`
 
 Notes:
 
 - Railway injects `PORT` automatically.
 - `AUTH_INTERNAL_SERVICE_TOKEN` must match the same secret configured in `clean-periodic-table-backend`.
+- `REFRESH_ROTATION_GRACE_MS` keeps a short grace window for concurrent refresh retries that arrive with the immediately previous refresh token version.
 - The internal route `/internal/users` is intended only for trusted backend services, never for direct browser use.
 - The internal route `/internal/users/:userId/sessions/revoke` is intended only for trusted backend services, never for direct browser use.

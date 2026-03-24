@@ -46,4 +46,39 @@ describe('MongoUserRepository', () => {
 
     expect(find).toHaveBeenCalledWith({ id: { $gt: 'user-9' } }, { _id: 0, id: 1, name: 1, email: 1 });
   });
+
+  it('accepts the immediately previous token version within the configured refresh grace window', async () => {
+    const findOneAndUpdate = vi.spyOn(UserModel, 'findOneAndUpdate').mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        lean: vi.fn().mockReturnValue({
+          exec: vi.fn().mockResolvedValue(null),
+        }),
+      }),
+    } as never);
+    const findOne = vi.spyOn(UserModel, 'findOne').mockReturnValue({
+      lean: vi.fn().mockReturnValue({
+        exec: vi.fn().mockResolvedValue({
+          id: 'user-1',
+          name: 'Ada Lovelace',
+          email: 'ada@example.com',
+          passwordHash: 'hashed',
+          role: 'USER',
+          tokenVersion: 8,
+          lastRefreshRotatedAt: new Date(),
+        }),
+      }),
+    } as never);
+
+    const repository = new MongoUserRepository(3_000);
+    const result = await repository.refreshSession('user-1', 7);
+
+    expect(findOneAndUpdate).toHaveBeenCalled();
+    expect(findOne).toHaveBeenCalledWith({ id: 'user-1' }, { _id: 0, __v: 0 });
+    expect(result).toMatchObject({
+      resolution: 'grace',
+      user: {
+        id: 'user-1',
+      },
+    });
+  });
 });

@@ -1,9 +1,17 @@
 import type UserRepository from "@/application/protocols/UserRepository.js";
 import type { ListUserIdentitiesInput } from "@/application/protocols/UserRepository.js";
+import type { RefreshSessionResult } from "@/application/protocols/UserRepository.js";
 import User from "@/domain/User.js";
+import { resolveRefreshRotationGraceMs } from "@/infrastructure/repositories/refreshRotationGrace.js";
 
 export default class LocalUserRepository implements UserRepository {
   private userList: User[] = [];
+  private lastRefreshRotationMs = new Map<string, number>();
+  private readonly refreshRotationGraceMs: number;
+
+  constructor(refreshRotationGraceMs: number = resolveRefreshRotationGraceMs()) {
+    this.refreshRotationGraceMs = refreshRotationGraceMs;
+  }
 
   async findByEmail(email: string): Promise<User | null> {
     const user = this.userList.find((user) => {
@@ -38,6 +46,46 @@ export default class LocalUserRepository implements UserRepository {
     };
   }
 
+  async refreshSession(id: string, currentTokenVersion: number): Promise<RefreshSessionResult | null> {
+    const userIndex = this.userList.findIndex((user) => user.id === id);
+
+    if (userIndex === -1) {
+      return null;
+    }
+
+    const user = this.userList[userIndex];
+
+    if (user === undefined) {
+      return null;
+    }
+
+    const currentVersion = user.getTokenVersion();
+
+    if (currentVersion === currentTokenVersion) {
+      user.rotateRefreshToken();
+      this.userList[userIndex] = user;
+      this.lastRefreshRotationMs.set(user.id, Date.now());
+
+      return {
+        user,
+        resolution: 'rotated',
+      };
+    }
+
+    const rotatedAtMs = this.lastRefreshRotationMs.get(user.id) ?? null;
+    const isWithinGraceWindow =
+      rotatedAtMs !== null && Date.now() - rotatedAtMs <= this.refreshRotationGraceMs;
+
+    if (currentVersion === currentTokenVersion + 1 && isWithinGraceWindow) {
+      return {
+        user,
+        resolution: 'grace',
+      };
+    }
+
+    return null;
+  }
+
   async rotateRefreshToken(id: string, currentTokenVersion: number): Promise<User | null> {
     const userIndex = this.userList.findIndex((user) => {
       return user.id === id && user.getTokenVersion() === currentTokenVersion;
@@ -55,6 +103,7 @@ export default class LocalUserRepository implements UserRepository {
 
     user.rotateRefreshToken();
     this.userList[userIndex] = user;
+    this.lastRefreshRotationMs.delete(user.id);
 
     return user;
   }
@@ -74,6 +123,7 @@ export default class LocalUserRepository implements UserRepository {
 
     user.rotateRefreshToken();
     this.userList[userIndex] = user;
+    this.lastRefreshRotationMs.delete(user.id);
 
     return true;
   }

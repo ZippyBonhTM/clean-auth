@@ -9,6 +9,7 @@ type UserDocument = {
   passwordHash: string;
   role: UserRole;
   tokenVersion: number;
+  lastRefreshRotatedAt: Date | null;
 };
 
 const userSchema = new mongoose.Schema<UserDocument>(
@@ -19,6 +20,7 @@ const userSchema = new mongoose.Schema<UserDocument>(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['USER', 'ADMIN'], required: true },
     tokenVersion: { type: Number, required: true, default: 0 },
+    lastRefreshRotatedAt: { type: Date, default: null },
   },
   {
     collection: 'users',

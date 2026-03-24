@@ -7,6 +7,8 @@ function makeRepository(): UserRepository {
   return {
     findByEmail: vi.fn(),
     findById: vi.fn(),
+    listIdentities: vi.fn(),
+    refreshSession: vi.fn(),
     rotateRefreshToken: vi.fn(),
     revokeUserSessions: vi.fn(),
     save: vi.fn(),
