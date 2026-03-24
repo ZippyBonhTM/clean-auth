@@ -140,17 +140,11 @@ router.post('/logout', async (req, res, next) => {
 router.get('/profile', async (req, res, next) => {
   try {
     const accessToken = getAccessToken(req);
-    const refreshToken = readOptionalRefreshToken(req);
-
-    const profileResponse = await showProfileUseCase.execute(accessToken, refreshToken);
+    const profileResponse = await showProfileUseCase.execute(accessToken);
 
     if (!profileResponse) {
       res.status(404).json({ message: "Usuário não encontrado" });
       return;
-    }
-
-    if (profileResponse.refreshToken) {
-      setRefreshTokenCookie(res, profileResponse.refreshToken);
     }
 
     res.status(200).json({
