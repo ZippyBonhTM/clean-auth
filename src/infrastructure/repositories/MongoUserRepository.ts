@@ -1,8 +1,10 @@
 import type UserRepository from '@/application/protocols/UserRepository.js';
 import type { ListUserIdentitiesInput } from '@/application/protocols/UserRepository.js';
+import type { RefreshSessionResult } from '@/application/protocols/UserRepository.js';
 import User from '@/domain/User.js';
 import UserModel from '@/infrastructure/mongoose/models/UserModel.js';
 import type { UserDocument } from '@/infrastructure/mongoose/models/UserModel.js';
+import { resolveRefreshRotationGraceMs } from '@/infrastructure/repositories/refreshRotationGrace.js';
 
 function toDomain(document: UserDocument): User {
   return User.createWithDetails(
@@ -16,6 +18,12 @@ function toDomain(document: UserDocument): User {
 }
 
 export default class MongoUserRepository implements UserRepository {
+  private readonly refreshRotationGraceMs: number;
+
+  constructor(refreshRotationGraceMs: number = resolveRefreshRotationGraceMs()) {
+    this.refreshRotationGraceMs = refreshRotationGraceMs;
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     const user = await UserModel.findOne({ email }, { _id: 0, __v: 0 }).lean().exec();
 
@@ -68,6 +76,9 @@ export default class MongoUserRepository implements UserRepository {
         $inc: {
           tokenVersion: 1,
         },
+        $set: {
+          lastRefreshRotatedAt: null,
+        },
       },
       { new: true },
     )
@@ -82,12 +93,60 @@ export default class MongoUserRepository implements UserRepository {
     return toDomain(user);
   }
 
+  async refreshSession(id: string, currentTokenVersion: number): Promise<RefreshSessionResult | null> {
+    const rotatedAt = new Date();
+    const rotatedUser = await UserModel.findOneAndUpdate(
+      { id, tokenVersion: currentTokenVersion },
+      {
+        $inc: {
+          tokenVersion: 1,
+        },
+        $set: {
+          lastRefreshRotatedAt: rotatedAt,
+        },
+      },
+      { new: true },
+    )
+      .select({ _id: 0, __v: 0 })
+      .lean<UserDocument>()
+      .exec();
+
+    if (rotatedUser !== null) {
+      return {
+        user: toDomain(rotatedUser),
+        resolution: 'rotated',
+      };
+    }
+
+    const currentUser = await UserModel.findOne({ id }, { _id: 0, __v: 0 }).lean<UserDocument>().exec();
+
+    if (currentUser === null) {
+      return null;
+    }
+
+    const rotatedAtMs = currentUser.lastRefreshRotatedAt?.getTime() ?? null;
+    const isWithinGraceWindow =
+      rotatedAtMs !== null && Date.now() - rotatedAtMs <= this.refreshRotationGraceMs;
+
+    if (currentUser.tokenVersion === currentTokenVersion + 1 && isWithinGraceWindow) {
+      return {
+        user: toDomain(currentUser),
+        resolution: 'grace',
+      };
+    }
+
+    return null;
+  }
+
   async revokeUserSessions(id: string): Promise<boolean> {
     const result = await UserModel.updateOne(
       { id },
       {
         $inc: {
           tokenVersion: 1,
+        },
+        $set: {
+          lastRefreshRotatedAt: null,
         },
       },
     ).exec();

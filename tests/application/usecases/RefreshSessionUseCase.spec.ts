@@ -19,8 +19,11 @@ function makeRepository(): UserRepository {
   return {
     findByEmail: vi.fn(),
     findById: vi.fn(),
+    refreshSession: vi.fn(),
     rotateRefreshToken: vi.fn(),
     save: vi.fn(),
+    revokeUserSessions: vi.fn(),
+    listIdentities: vi.fn(),
   };
 }
 
@@ -41,13 +44,16 @@ describe('RefreshSessionUseCase', () => {
       id: 'user-1',
       tokenVersion: 3,
     });
-    vi.mocked(userRepository.rotateRefreshToken).mockResolvedValue(rotatedUser);
+    vi.mocked(userRepository.refreshSession).mockResolvedValue({
+      user: rotatedUser,
+      resolution: 'rotated',
+    });
 
     const sut = new RefreshSessionUseCase(tokenService, userRepository);
 
     const output = await sut.execute('refresh-token');
 
-    expect(userRepository.rotateRefreshToken).toHaveBeenCalledWith('user-1', 3);
+    expect(userRepository.refreshSession).toHaveBeenCalledWith('user-1', 3);
     expect(tokenService.generateAccessToken).toHaveBeenCalledWith({ id: 'user-1' });
     expect(tokenService.generateRefreshToken).toHaveBeenCalledWith({
       id: 'user-1',
@@ -67,7 +73,7 @@ describe('RefreshSessionUseCase', () => {
       id: 'user-1',
       tokenVersion: 3,
     });
-    vi.mocked(userRepository.rotateRefreshToken).mockResolvedValue(null);
+    vi.mocked(userRepository.refreshSession).mockResolvedValue(null);
 
     const sut = new RefreshSessionUseCase(tokenService, userRepository);
 

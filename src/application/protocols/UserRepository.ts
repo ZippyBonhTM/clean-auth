@@ -16,10 +16,16 @@ export type ListUserIdentitiesResult = {
   nextCursor: string | null;
 };
 
+export type RefreshSessionResult = {
+  user: User;
+  resolution: 'rotated' | 'grace';
+};
+
 export default interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   findById(id: string): Promise<User | null>;
   listIdentities(input: ListUserIdentitiesInput): Promise<ListUserIdentitiesResult>;
+  refreshSession(id: string, currentTokenVersion: number): Promise<RefreshSessionResult | null>;
   rotateRefreshToken(id: string, currentTokenVersion: number): Promise<User | null>;
   revokeUserSessions(id: string): Promise<boolean>;
   save(user: User): Promise<void>;
